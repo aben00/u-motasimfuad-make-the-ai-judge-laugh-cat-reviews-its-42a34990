@@ -13,7 +13,11 @@ node main.ts
 cat /output/entry.txt
 ```
 
-`main.ts` writes the entry deterministically to `/output/entry.txt`, self-checks the gate (one line, 1–200 characters by code-point count, no control characters, no edge whitespace), reads the file back and verifies it byte-for-byte.
+`main.ts` writes the entry deterministically to `/output/entry.txt`, self-checks the gate (one line, 1–200 characters by code-point count, no control characters, no edge whitespace, opens with the one-star review shape `One star.`, stable UTF-8), reads the file back and verifies it byte-for-byte.
+
+## Why this line
+
+The complaint is specific and recognisable — a closed bedroom door, a 3 a.m. yowl — the human is measured by cat standards (the door is the enemy, the human merely its accomplice), and the sting lands in the last few words.
 
 ## The entry
 

@@ -12,6 +12,30 @@ const ENTRY =
 const OUTPUT_PATH = process.env.OUTPUT_PATH || "/output/entry.txt";
 const MAX_CHARS = 200;
 
+// The review keeps the deadpan shape of a real one-star review: it opens
+// with the rating, then the complaint.
+const REVIEW_PREFIX = "One star.";
+
+// Find the first control character in the text, if any, so the gate can
+// name the exact offender instead of failing on the whole line at once.
+function findControlChar(text) {
+  for (const ch of Array.from(text)) {
+    const code = ch.codePointAt(0);
+    if (code < 0x20 || code === 0x7f) {
+      return { ch, code };
+    }
+  }
+  return null;
+}
+
+// Prove the line survives a UTF-8 encode/decode round-trip unchanged.
+function isStableUtf8(text) {
+  const roundTrip = new TextDecoder("utf-8", { fatal: true }).decode(
+    new TextEncoder().encode(text),
+  );
+  return roundTrip === text;
+}
+
 // The gate, as a validator that collects every violation instead of
 // failing on the first one, so a bad line reports all of its problems.
 // Counts code points, not UTF-16 units, so the 200-character gate holds
@@ -33,24 +57,21 @@ function checkGate(text) {
   if (text !== text.trim()) {
     violations.push("entry must not start or end with whitespace");
   }
-  for (const ch of chars) {
-    const code = ch.codePointAt(0);
-    if (code < 0x20 || code === 0x7f) {
-      violations.push(
-        `entry must not contain control characters (U+${code.toString(16).padStart(4, "0")})`,
-      );
-      break;
-    }
+  if (!text.startsWith(REVIEW_PREFIX)) {
+    violations.push(
+      `entry must open with the one-star review shape (${JSON.stringify(REVIEW_PREFIX)})`,
+    );
+  }
+  const bad = findControlChar(text);
+  if (bad !== null) {
+    violations.push(
+      `entry must not contain control characters (U+${bad.code.toString(16).padStart(4, "0")})`,
+    );
   }
   if (text.includes("\n") || text.includes("\r")) {
     violations.push("entry must be a single line");
   }
-  // The gate scores UTF-8 text: prove the line survives an encode/decode
-  // round-trip unchanged before it is written.
-  const roundTrip = new TextDecoder("utf-8", { fatal: true }).decode(
-    new TextEncoder().encode(text),
-  );
-  if (roundTrip !== text) {
+  if (!isStableUtf8(text)) {
     violations.push("entry is not stable UTF-8 text");
   }
   return violations;
